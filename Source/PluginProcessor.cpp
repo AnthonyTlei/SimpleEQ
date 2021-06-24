@@ -95,6 +95,15 @@ void SimpleEQAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 {
 	// Use this method as the place to do any pre-playback
 	// initialisation that you need..
+
+	//Preparing the filters before using them
+	juce::dsp::ProcessSpec spec;
+	spec.maximumBlockSize = samplesPerBlock;
+	spec.numChannels = 1; //Because it's a mono chain 
+	spec.sampleRate = sampleRate;
+
+	leftChain.prepare(spec);
+	rightChain.prepare(spec);
 }
 
 void SimpleEQAudioProcessor::releaseResources()
@@ -131,6 +140,19 @@ bool SimpleEQAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) 
 
 void SimpleEQAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+
+	/*
+	Notes: 
+	The Processing chain requires a processing context to be passed to it in order to 
+	run the audio through the links in the chain.
+
+	To make a processing context, we need to supply it with an audio block instance.
+
+	The processBlock function is called by the host, and given a buffer with any number of channels, 
+	so we need to extract the left/right (0/1) channels from the buffer.
+
+	*/
+
 	juce::ScopedNoDenormals noDenormals;
 	auto totalNumInputChannels = getTotalNumInputChannels();
 	auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -144,18 +166,16 @@ void SimpleEQAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
 		buffer.clear(i, 0, buffer.getNumSamples());
 
-	// This is the place where you'd normally do the guts of your plugin's
-	// audio processing...
-	// Make sure to reset the state if your inner loop is processing
-	// the samples and the outer loop is handling the channels.
-	// Alternatively, you can process the samples with the channels
-	// interleaved by keeping the same state.
-	for (int channel = 0; channel < totalNumInputChannels; ++channel)
-	{
-		auto* channelData = buffer.getWritePointer(channel);
+	juce::dsp::AudioBlock<float> block(buffer);
 
-		// ..do something to the data...
-	}
+	auto leftBlock = block.getSingleChannelBlock(0);
+	auto rightBlock = block.getSingleChannelBlock(1);
+
+	juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+	juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
+
+	leftChain.process(leftContext);
+	rightChain.process(rightContext);
 }
 
 //==============================================================================
@@ -190,6 +210,7 @@ SimpleEQAudioProcessor::createParameterLayout()
 {
 	juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
+	#pragma region Adding Parameters to Layout
 	layout.add(std::make_unique<juce::AudioParameterFloat>(
 		"LowCut Freq",
 		"LowCut Freq",
@@ -247,6 +268,7 @@ SimpleEQAudioProcessor::createParameterLayout()
 		stringArray,
 		0)
 	);
+	#pragma endregion
 
 	return layout;
 }
