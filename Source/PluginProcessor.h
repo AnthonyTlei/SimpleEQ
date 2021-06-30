@@ -30,6 +30,23 @@ struct ChainSettings
 
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
 
+#pragma region Aliases For Nested Namespaces
+
+using Filter = juce::dsp::IIR::Filter<float>;
+
+using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
+
+using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>;
+
+#pragma endregion
+
+enum ChainPositions
+{
+    LowCut,
+    Peak,
+    HighCut
+};
+
 //==============================================================================
 /**
 */
@@ -78,25 +95,8 @@ public:
 
 private:
 
-    #pragma region Aliases For Nested Namespaces
-
-    using Filter = juce::dsp::IIR::Filter<float>;
-
-    using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
-
-    using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>;
-
-    #pragma endregion
-
     //Creating 2 Mono Channels, to process Stereo Audio
     MonoChain leftChain, rightChain;
-
-    enum ChainPositions
-    {
-        LowCut,
-        Peak,
-        HighCut
-    };
 
     void updatePeakFilter(const ChainSettings& chainSettings);
     using Coefficients = Filter::CoefficientsPtr;
