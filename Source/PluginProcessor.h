@@ -303,6 +303,9 @@ private:
 
     void updateFilters();
 
+    /* We use the Oscillator to test the accuracy of the Analyzer in Frequency */
+    juce::dsp::Oscillator<float> osc;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };

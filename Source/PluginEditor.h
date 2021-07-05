@@ -211,6 +211,36 @@ private:
 	juce::String suffix;
 };
 
+struct PathProducer
+{
+    PathProducer(SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>& scsf) :
+        leftChannelFifo(&scsf)
+    {
+        // Initializing FFT data generators and Mono Buffers
+        leftChannelFFTDataGenerator.changeOrder(FFTOrder::order2048);
+        monoBuffer.setSize(1, leftChannelFFTDataGenerator.getFFTSize());
+    }
+
+    void process(juce::Rectangle<float> fftBounds, double sampleRate);
+    juce::Path getPath() { return leftChannelFFTPath; };
+
+private:
+    /* SCSF Declaration */
+    SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>* leftChannelFifo;
+
+    /* Creating a Mono Buffer to make sure Data stays in order, going from the SCSF to the FFT data generator (right to left)*/
+    juce::AudioBuffer<float> monoBuffer;
+
+    /* Instance of the FFT */
+    FFTDataGenerator<std::vector<float>> leftChannelFFTDataGenerator;
+
+    /* Instnace of Path Generator (From FFT Data) */
+    AnalyzerPathGenerator<juce::Path> pathProducer;
+
+    /* Retrieving Paths to draw them */
+    juce::Path leftChannelFFTPath;
+};
+
 struct ResponseCurveComponent : juce::Component,
 	juce::AudioProcessorParameter::Listener,
 	juce::Timer
@@ -244,20 +274,7 @@ private:
 
 	juce::Rectangle<int> getAnalysisArea();
 
-	/* SCSF Declaration */
-	SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>* leftChannelFifo;
-
-	/* Creating a Mono Buffer to make sure Data stays in order, going from the SCSF to the FFT data generator (right to left)*/
-	juce::AudioBuffer<float> monoBuffer;
-
-    /* Instance of the FFT */
-    FFTDataGenerator<std::vector<float>> leftChannelFFTDataGenerator;
-
-    /* Instnace of Path Generator (From FFT Data) */
-    AnalyzerPathGenerator<juce::Path> pathProducer;
-
-    /* Retrieving Paths to draw them */
-    juce::Path leftChannelFFTPath;
+    PathProducer leftPathProducer, rightPathProducer;
 };
 
 //==============================================================================
