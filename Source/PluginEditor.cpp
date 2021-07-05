@@ -366,8 +366,11 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
 	}
 
 	/* Drawing FFT Data Path */
-	g.setColour(Colours::blue);
+	leftChannelFFTPath.applyTransform(AffineTransform().translation(responseArea.getX(), responseArea.getY()));
+
+	g.setColour(Colours::skyblue);
 	g.strokePath(leftChannelFFTPath, PathStrokeType(1.f));
+	/* */
 
 	g.setColour(Colours::orange);
 	g.drawRoundedRectangle(getRenderArea().toFloat(), 4.f, 1.f);
