@@ -107,6 +107,10 @@ void SimpleEQAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 
 	/* Updating Filters with new Parameters */
 	updateFilters();
+
+	/* Preparing Channel Fifos */
+	leftChannelFifo.prepare(samplesPerBlock);
+	rightChannelFifo.prepare(samplesPerBlock);
 }
 
 void SimpleEQAudioProcessor::releaseResources()
@@ -183,6 +187,10 @@ void SimpleEQAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
 	leftChain.process(leftContext);
 	rightChain.process(rightContext);
+
+	/* Push buffer to Channel fifo */
+	leftChannelFifo.update(buffer);
+	rightChannelFifo.update(buffer);
 }
 
 //==============================================================================
